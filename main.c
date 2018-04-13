@@ -1,11 +1,12 @@
 #include <18F4620.h>
+#include <18F4620.h>
 #fuses HS, NOFCMEN, NOIESO, PUT, NOBROWNOUT, NOWDT
 #fuses NOPBADEN, NOMCLR, STVREN, NOLVP, NODEBUG
 #use delay(clock=16000000)
 #define __OPERACION_SUMA__ 1
-#define __OPERACION_RESTA__ 1
-#define __OPERACION_MULTIPLICAR__ 1
-#define __OPERACION_DIVIDIR__ 1
+#define __OPERACION_RESTA__ 2
+#define __OPERACION_MULTIPLICAR__ 3
+#define __OPERACION_DIVIDIR__ 4
 #define _SUMA_   PIN_B4
 #define _RESTA_   PIN_B5
 #define _MULTIPLICAR_   PIN_B6
@@ -69,7 +70,7 @@ void main (void){
           }
           else{
           resultadoOperacion = (~(int16)numeroEnD)+1;
-          resultadoOperacion = resultadoOperacion - (int16)numeroEnD;
+          resultadoOperacion = resultadoOperacion - (int16)numeroEnC;
           recorrido(resultadoOperacion);
           interruptor = 0;
           }

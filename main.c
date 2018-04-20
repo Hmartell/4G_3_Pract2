@@ -1,17 +1,12 @@
 #include <18F4620.h>
-#include <18F4620.h>
 #fuses HS, NOFCMEN, NOIESO, PUT, NOBROWNOUT, NOWDT
 #fuses NOPBADEN, NOMCLR, STVREN, NOLVP, NODEBUG
 #use delay(clock=16000000)
-#define __OPERACION_SUMA__ 1
-#define __OPERACION_RESTA__ 2
-#define __OPERACION_MULTIPLICAR__ 3
-#define __OPERACION_DIVIDIR__ 4
-#define _SUMA_   PIN_B4
-#define _RESTA_   PIN_B5
-#define _MULTIPLICAR_   PIN_B6
-#define _DIVIDIR_   PIN_B7
-#define __VALOR_DE_ERROR__ 0X1FFF
+#use fast_io(a)
+#use fast_io(b)
+#use fast_io(c)
+#use fast_io(d)
+#use fast_io(e)
 #define __DEBUG_SERIAL__
 
 #ifdef __DEBUG_SERIAL__
@@ -19,20 +14,18 @@
    #use RS232(BAUD=9600, XMIT=TX_232, BITS=8,PARITY=N, STOP=1)
    #use fast_io(c)
 #endif
-void recorrido(long resultadoFinal){
-    output_a(resultadoFinal);
-    output_b(resultadoFinal>>6);
-    output_e(resultadoFinal>>10);
-}
-void comprobacionDeInterruptor(int8 interruptores){
-   if(input(_SUMA_)==1)
-     interruptores=__OPERACION_SUMA__;
-   if(input(_RESTA_)==1)
-     interruptores= __OPERACION_RESTA__;
-   if(input(_MULTIPLICAR_)==1)
-     interruptores= __OPERACION_MULTIPLICAR__;
-   if(input(_DIVIDIR_)==1)
-     interruptores= __OPERACION_DIVIDIR__;
+
+int comprobacionDeInterruptor(){
+   int interruptores;
+   if(input(pin_b4)==1)
+      interruptores = 1;
+   if(input(pin_b5)==1)
+      interruptores = 2;
+   if(input(pin_b6)==1)
+      interruptores = 3;
+   if(input(pin_b7)==1)
+      interruptores = 4;     
+   return interruptores;
 }
 void main (void){
    setup_oscillator(OSC_16MHZ);  
@@ -41,63 +34,60 @@ void main (void){
    set_tris_b(0xF0);
    set_tris_a(0xC0);
    set_tris_e(0x08);   
-   int8 numeroEnC = input_c(), numeroEnD = input_d(), interruptor;
-   int16 resultadoOperacion;
-/*#ifdef __DEBUG_SERIAL__ 
-   printf("Hola Mundo\n");
-#endif*/
+   long numeroEnC;
+   long numeroEnD;
+   int interruptor;
+   long resultadoOperacion;
+
    while(1){    
-    numeroEnC = input_c();
-    numeroEnD = input_d();    
-   comprobacionDeInterruptor(interruptor);    
+   numeroEnC = (long)input_c();
+   numeroEnD = (long)input_d();    
+   interruptor = comprobacionDeInterruptor();    
    switch (interruptor){
       case 1:
-      resultadoOperacion = (int16)numeroEnC + (int16)numeroEnD;
-      recorrido(resultadoOperacion);
-      interruptor = 0;
+         resultadoOperacion = numeroEnC + numeroEnD;
+         output_a(resultadoOperacion);
+         output_b(resultadoOperacion>>6);
+         output_e(resultadoOperacion>>10);
+         interruptor = 0;
       break;
       case 2:
-         if(numeroEnD == 0 && numeroEnC == 0){
-         resultadoOperacion = __VALOR_DE_ERROR__;
-         recorrido(resultadoOperacion);
+         resultadoOperacion = numeroEnC - numeroEnD;
+         output_a(resultadoOperacion);
+         output_b(resultadoOperacion>>6);
+         output_e(resultadoOperacion>>10);
          interruptor = 0;
-         }
-         else{
-          if(numeroEnD <= numeroEnC){
-          resultadoOperacion = (int16)numeroEnC - (int16)numeroEnD;
-          recorrido(resultadoOperacion);
-          interruptor = 0;
-          }
-          else{
-          resultadoOperacion = (~(int16)numeroEnD)+1;
-          resultadoOperacion = resultadoOperacion - (int16)numeroEnC;
-          recorrido(resultadoOperacion);
-          interruptor = 0;
-          }
-         }
       break;
       case 3:
-      resultadoOperacion = (int16)numeroEnC * (int16)numeroEnD;
-      recorrido(resultadoOperacion);
-      interruptor = 0;
+         resultadoOperacion = numeroEnC * numeroEnD;
+         output_a(resultadoOperacion);
+         output_b(resultadoOperacion>>6);
+         output_e(resultadoOperacion>>10);
+         interruptor = 0;
       break;
       case 4:
-      if(numeroEnD == 0 && numeroEnC == 0){
-         resultadoOperacion = __VALOR_DE_ERROR__;
-         recorrido(resultadoOperacion);
+         if(numeroEnC == 0 && numeroEnD == 0){
+         resultadoOperacion = 0x1FFF;
+         output_a(resultadoOperacion);
+         output_b(resultadoOperacion>>6);
+         output_e(resultadoOperacion>>10);
+         delay_ms(200);
          }
          else{
-          if(numeroEnC > numeroEnC){
-          resultadoOperacion = (int16)numeroEnC / (int16)numeroEnD;
-          if(resultadoOperacion > __VALOR_DE_ERROR__ ){
-             resultadoOperacion = __VALOR_DE_ERROR__;          
-             recorrido(resultadoOperacion);
-             interruptor = 0;
-          }
-          else
-             recorrido(resultadoOperacion);
-             interruptor = 0;
-          }
+         if(numeroEnD == 0){
+         resultadoOperacion = 0x1FFF;
+         output_a(resultadoOperacion);
+         output_b(resultadoOperacion>>6);
+         output_e(resultadoOperacion>>10);
+         delay_ms(200);
+         }
+         else{
+         resultadoOperacion = numeroEnC / numeroEnD;
+         output_a(resultadoOperacion);
+         output_b(resultadoOperacion>>6);
+         output_e(resultadoOperacion>>10);
+         interruptor = 0;
+         }
          }
       break;
       }
